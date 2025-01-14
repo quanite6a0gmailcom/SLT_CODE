@@ -19,7 +19,7 @@ from signjoey.vocabulary import (
     BOS_TOKEN,
     PAD_TOKEN,
 )
-
+import sentencepiece as spm
 
 def load_data(data_cfg: dict) -> (Dataset, Dataset, Dataset, Vocabulary, Vocabulary):
     """
@@ -64,12 +64,18 @@ def load_data(data_cfg: dict) -> (Dataset, Dataset, Dataset, Vocabulary, Vocabul
     level = data_cfg["level"]
     txt_lowercase = data_cfg["txt_lowercase"]
     max_sent_length = data_cfg["max_sent_length"]
+    sp_model_path = data_cfg.get("sp_model_path", "")
+    if sp_model_path:
+        sp = spm.SentencePieceProcessor(
+            model_file=data_cfg["sp_model_path"],
+        )
 
     def tokenize_text(text):
         if level == "char":
             return list(text)
         else:
-            return text.split()
+            # return text.split()
+            return sp.encode(text, out_type=str)
 
     def tokenize_features(features):
         ft_list = torch.split(features, 1, dim=0)

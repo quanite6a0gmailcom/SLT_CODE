@@ -24,6 +24,10 @@ from signjoey.batch import Batch
 from signjoey.helpers import freeze_params
 from torch import Tensor
 from typing import Union
+from torchtext.vocab import Vectors
+from pathlib import Path
+import json
+import pickle
 
 
 class SignModel(nn.Module):
@@ -464,5 +468,19 @@ def build_model(
 
     # custom initialization of model parameters
     initialize_model(model, cfg, txt_padding_idx)
+
+    if do_translation:
+        vectors_path = cfg.get("word_vectors", "")
+        if vectors_path:
+            vectors_path = Path(vectors_path).expanduser()
+            pretrain_vector = Vectors(
+                name=vectors_path.name,
+                cache=str(vectors_path.parent),
+            )
+            for i, token in enumerate(txt_vocab.itos):
+                if token.strip() in pretrain_vector.stoi:
+                    model.txt_embed.lut.weight.data[i][
+                        : pretrain_vector.dim
+                    ] = pretrain_vector[token.strip()]
 
     return model
